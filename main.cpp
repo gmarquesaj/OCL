@@ -1,10 +1,14 @@
+
+
 #include "ocl.hpp"
 
 int main() {
+  cout << "//EXEMPLO DE USO DO CABEÇALHO\n";
+  cout << "//SOMA OS VALORES DOS VETORES 'A' e 'B' SALVANDO O RESULTADO EM "
+          "'C'\n\n";
   OPENCL ocl(true);
-  cout << "teste\n";
-  vector<int> A = {10, 12, 2, 3, 42, 5, 6, 7, 8, 9};
-  vector<int> B = {0, 1, 2, 10, 1, 2, 0, 13, 2, 0};
+  vector<int> A = {10, 12, 2, 35, 42, 51, 16, 17, -8, 9};
+  vector<int> B = {32, 21, 5, 10, 15, 23, 10, 13, 2, -10};
   vector<int> C(10, 0);
   ocl.SetarCodigo(
       "   void kernel adicao(global const int* A, global const int* B, "
@@ -24,7 +28,7 @@ int main() {
   ocl.finalizar(10);
   ocl.recuperar(b_c, C);
   for (int i = 0; i < 10; i++) {
-    cout << C[i] << " ";
+    cout << A[i] << " + " << B[i] << " = " << C[i] << "\n";
   }
   cout << "\n";
   return 0;
