@@ -1,0 +1,5 @@
+*.mp4
+Exec/
+IMG/
+.vscode/
+*.o

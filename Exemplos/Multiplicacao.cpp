@@ -1,6 +1,6 @@
 
 
-#include "ocl.hpp"
+#include "../ocl.hpp"
 
 int main() {
   cout << "//EXEMPLO DE USO DO CABEÇALHO\n";
