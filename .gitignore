@@ -3,3 +3,4 @@ Exec/
 IMG/
 .vscode/
 *.o
+*.txt
