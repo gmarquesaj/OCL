@@ -1,3 +1,12 @@
+/*
+###################################################################
+##                                                               ##
+##            CRIADO POR GILSON MARQUES ALVES JUNIOR             ##
+##         exemplo de uso da lib OCL.HPP com cl::Image2D         ##
+##   Desenha o fractal do matematico frances Benoît Mandelbrot   ##
+##                                                               ##
+###################################################################
+*/
 
 
 #include "../ocl.hpp"
@@ -47,7 +56,7 @@ int main() {
   cout << "//DESENHA O FRACTAL DE MANDELBROT \n";
   OPENCL ocl(false);
 
-  ocl.AbrirCodigo("exemplo.cl", "mandelbrot");
+  ocl.AbrirCodigo("exemplo.cl", "mandelbrotImage2D");
   system("rm -f IMG/*");
   cout << "\n";
 
@@ -60,7 +69,7 @@ int main() {
   cl_int erro;
   cl::Image2D imagem;
   cl::Sampler amostra;
-  ocl.Imagem(w, h, b_a, img, imagem, amostra, true);
+  ocl.ImagemHOST(w, h, b_a, img, imagem, amostra, true);
 
   ocl.SetarArgumentos(0, imagem);
   ocl.SetarArgumentos(1, amostra);

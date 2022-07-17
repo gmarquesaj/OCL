@@ -18,9 +18,9 @@ int main() {
       "   }                                                                    "
       "           ");
 
-  cl::Buffer b_a = ocl.CriarBuffer(A);
-  cl::Buffer b_b = ocl.CriarBuffer(B);
-  cl::Buffer b_c = ocl.CriarBuffer(C);
+  cl::Buffer b_a = ocl.CriarBufferHOST(A);
+  cl::Buffer b_b = ocl.CriarBufferHOST(B);
+  cl::Buffer b_c = ocl.CriarBufferHOST(C);
   ocl.SetarPrograma("adicao");
   ocl.SetarArgumentos(0, b_a);
   ocl.SetarArgumentos(1, b_b);

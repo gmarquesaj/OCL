@@ -1,3 +1,22 @@
+/*
+##################################################
+##                                              ##
+##    CRIADO POR GILSON MARQUES ALVES JUNIOR    ##
+##       EM 20/JUNHO/2022- SEGUNDA FEIRA        ##
+##              Pirapora MG Brasil              ##
+##    COM O OBJETIVO DE FACILITAR A CRIAÇÃO     ##
+##   DE PEQUENAS APLICAÇÕES COM PROCESSAMENTO   ##
+##     EM GPU USANDO OPENCL DE FORMA FACIL      ##
+##                                              ##
+##                   CONTATOS                   ##
+##                55038984331917                ##
+##             gmarquesaj@gmail.com             ##
+##################################################
+*/
+
+
+#include <CL/cl.h>
+#include <cstddef>
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
 #include <iostream>
@@ -15,8 +34,10 @@ public:
   cl::Context contexto;
   cl::Program Programa;
   cl::Program::Sources Codigo;
+  std::string CodigoSTR;
   cl::Kernel kernel;
   cl::CommandQueue Fila;
+  // INICIALIZAR A CLASSE
   OPENCL(bool printar = false) {
     cl::Platform::get(&Plataformas);
 
@@ -59,16 +80,18 @@ public:
          << Dispositivo.getInfo<CL_DEVICE_NAME>() << "\n";
     contexto = cl::Context({Dispositivo});
   }
-  void AbrirCodigo(std::string codigo,std::string nomeProg) {
+  // LER ARQUIVO DE TEXTO E SETAR COMO CODIGO ALEM DE DEFINIR O NOME DO KERNEL
+  void AbrirCodigo(std::string codigo, std::string nomeProg) {
     std::ifstream t(codigo);
     std::string str((std::istreambuf_iterator<char>(t)),
                     std::istreambuf_iterator<char>());
+                    CodigoSTR = str;
     SetarCodigo(str);
     SetarPrograma(nomeProg);
-
   }
+  // PASSAR STRING COMO CODIGO PARA A CLASSE
   void SetarCodigo(std::string codigo) {
-
+    Codigo.clear();
     Codigo.push_back({codigo.c_str(), codigo.length()});
     Programa = cl::Program(contexto, Codigo);
     cl_int erro = Programa.build({Dispositivo});
@@ -83,48 +106,65 @@ public:
     }
     Fila = cl::CommandQueue(contexto, Dispositivo);
   }
+  // DEFINIR O NOME DO KERNEL
   void SetarPrograma(std::string NomeFuncao) {
     kernel = cl::Kernel(Programa, NomeFuncao.c_str());
   }
+  // DEFINIR O VALOR DE UM PARAMETRO DO KERNEL NO INDEX ESPECIFICADO
   template <typename T> void SetarArgumentos(cl_uint index, const T &value) {
     kernel.setArg(index, value);
   }
+  // EXECUTA O KERNEL NO RANGE ESPECIFICADO E AGUARDA A EXECUÇÃO FINALIZAR
   void finalizar(cl::NDRange range = cl::NullRange) {
     Fila.enqueueNDRangeKernel(kernel, cl::NullRange, range, cl::NullRange);
     Fila.finish(); //*/
   }
+  // PASSAR CONTEUDO DO BUFFER PARA VETOR
   template <typename T>
   void recuperar(cl::Buffer &Buffer, std::vector<T> &Vetor) {
     Fila.enqueueReadBuffer(Buffer, CL_TRUE, 0, sizeof(T) * Vetor.size(),
                            Vetor.data());
   }
+  // COPIAR VETOR PARA O BUFFER
   template <typename T>
-  void GuardaBuffer(cl::Buffer &Buffer, std::vector<T> &Vetor) {
+  void VetorParaBuffer(cl::Buffer &Buffer, std::vector<T> &Vetor) {
+    
     Fila.enqueueWriteBuffer(Buffer, CL_TRUE, 0, sizeof(T) * Vetor.size(),
                             Vetor.data());
   }
-  template <typename T> void GuardaBuffer(std::vector<T> &Vetor) {
-    cl::Buffer Buffer(contexto, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                      sizeof(T) * Vetor.size(), Vetor.data());
-    Fila.enqueueWriteBuffer(Buffer, CL_TRUE, 0, sizeof(T) * Vetor.size(),
-                            Vetor.data());
-  }
-  template <typename T> cl::Buffer CriarBuffer(std::vector<T> &Vetor) {
+
+
+  //ALOCAR MEMORIA NO DISPOSITVO host
+  template <typename T> cl::Buffer CriarBufferHOST(std::vector<T> &Vetor) {
     return cl::Buffer(contexto, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
                       sizeof(T) * Vetor.size(), Vetor.data());
   }
-
-  template <typename T> cl::Buffer CriarBufferESCRITA(std::vector<T> &Vetor) {
+  //ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO HOST
+  template <typename T> cl::Buffer CriarBufferHOST_ESCRITA(std::vector<T> &Vetor) {
     return cl::Buffer(contexto, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR,
                       sizeof(T) * Vetor.size(), Vetor.data());
   }
+
+
+//ALOCAR MEMORIA NO DISPOSITVO
+  template <typename T> cl::Buffer CriarBuffer(std::vector<T> &Vetor) {
+    return cl::Buffer(contexto,CL_MEM_READ_WRITE, sizeof(T) * Vetor.size(),NULL,NULL);
+  }
+  //ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO
+  template <typename T> cl::Buffer CriarBufferESCRITA(std::vector<T> &Vetor) {
+    return cl::Buffer(contexto,CL_MEM_WRITE_ONLY, sizeof(T) * Vetor.size(),NULL,NULL);
+   
+  }  
+
+  //DEFINI O FORMATO DA IMAGEM PARA VERMELHOR VERDE AZUL ALPHA EM FLOAT
   void SetarImgFormat(cl::ImageFormat &formato) {
     formato.image_channel_order = CL_RGBA;
     formato.image_channel_data_type = CL_FLOAT;
   }
-  int Imagem(int w, int h, cl::Buffer &B_img, vector<float> &img,
+  //CRIA IMAGEM 2D BASEADA NO VETOR RETORNA 0 PARA SUCESSO OU NUMERO PARA ERRO
+  int ImagemHOST(int w, int h, cl::Buffer &B_img, vector<float> &img,
              cl::Image2D &imagem, cl::Sampler &amostra, bool exibir = false) {
-    B_img = CriarBuffer(img);
+    B_img = CriarBufferHOST(img);
     cl_int erro;
     cl::ImageFormat formato;
     SetarImgFormat(formato);
@@ -156,6 +196,8 @@ public:
     }
     return erro;
   }
+
+  //COPIAR DADOS DA IMAGEM 2D PARA O VETOR
   int recuperarImagem(int w, int h, vector<float> &img, cl::Image2D &imagem,
                       bool exibir = false) {
     int erro = Fila.enqueueReadImage(imagem, CL_TRUE, {0, 0, 0},
