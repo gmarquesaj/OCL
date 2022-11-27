@@ -8,7 +8,6 @@
 ###################################################################
 */
 
-
 #include "../ocl.hpp"
 #include <CL/cl.h>
 #include <CL/cl_platform.h>
@@ -22,32 +21,28 @@ std::string to_zero_lead(const int value, int n_zero) {
   int zz = n_zero - fmin(n_zero, (int)old_str.length());
   return std::string(zz, '0') + old_str;
 };
-void SalvarImg(std::string nome, vector<float> &PXLS, int w, int h, int c) {
+void SalvarImgP6(std::string nome, vector<float> &PXLS, int w, int h, int c) {
   std::ofstream img(nome + ".ppm");
-  img << "P3\n" << w << " " << h << "\n255\n";
+  img << "P6\n" << w << " " << h << "\n255\n";
+  vector<char> saida;
+  int s= w*h *3;
+  saida.reserve(s);
 
-  for (int i = 0; i < PXLS.size(); i += c) {
-    if (c == 1) {
-      int v = PXLS[i] * 250;
-      v = v > 255 ? 255 : v < 0 ? 0 : v;
-      img << v << " " << v << " " << v << "\n";
-    } else {
-
-      int r = PXLS[i] * 250;
-      r = r > 255 ? 255 : r < 0 ? 0 : r;
-      int g = PXLS[i + 1] * 250;
-      g = g > 255 ? 255 : g < 0 ? 0 : g;
-      int b = PXLS[i + 2] * 250;
-      b = b > 255 ? 255 : b < 0 ? 0 : b;
-      img << r << " " << g << " " << b << "\n";
-    }
+  for (int i = 0; i < PXLS.size(); i+=c) {
+    saida.push_back((PXLS[i]*200));
+    saida.push_back((PXLS[i+1]*200));
+    saida.push_back((PXLS[i+2]*200));
   }
+  img.write(saida.data(), w*h*c);
   img.close();
   /* cout << "Salvo\nConvertendo para PNG\n";
   system(("ffmpeg -i " + nome + ".ppm " + nome +
           ".png -loglevel quiet  -y ; rm -f *.ppm ")
              .c_str()); */
 }
+
+
+
 float InterpolacaoLinear(float v0, float v1, float t) {
   return (1.0f - t) * v0 + t * v1;
 }
@@ -61,13 +56,13 @@ int main() {
   cout << "\n";
 
   const int c = 4;
-  const int h = 500;
+  const int h = 5000;
   const int w = h;
   vector<float> img(w * h * c, 1.0f);
 
   cl::Buffer b_a = ocl.CriarBufferESCRITA(img);
-  ocl.VetorParaBuffer(b_a,img);
-  cl_int erro;
+  ocl.VetorParaBuffer(b_a, img);
+
 
   ocl.SetarArgumentos(0, b_a);
 //#define anima
@@ -80,27 +75,28 @@ int main() {
   ocl.SetarArgumentos(2, zoom);
   ocl.SetarArgumentos(3, x_pos);
   ocl.SetarArgumentos(4, y_pos);
-  cout<<"PROCESSANDO\n";
+  cout << "PROCESSANDO\n";
   ocl.finalizar({(size_t)w, (size_t)h});
-  cout<<"FINALIZADO\nRECUPERANDO\n";
-  ocl.recuperar(b_a,img);
-  cout<<"RECUPERADO\nSALVANDO PRA ARQUIVO\n";
-  SalvarImg("IMG/" + to_zero_lead(1, 5), img, w, h, c);
-/*   cout<<"SALVO\nCONVERTENDO PARA PNG\n";
-  //CONVERTER PPM EM PNG E APAGAR O PPM
-  system("ffmpeg -i ./IMG/00001.ppm ./IMG/00001.png -loglevel quiet  -y ; rm -f ./IMG/*.ppm "); */
-  cout<<"CONCLUIDO\n";
+  cout << "FINALIZADO\nRECUPERANDO\n";
+  ocl.recuperar(b_a, img);
+  cout << "RECUPERADO\nSALVANDO PRA ARQUIVO\n";
+  SalvarImgP6("IMG/" + to_zero_lead(1, 5), img, w, h, c);
+  /*   cout<<"SALVO\nCONVERTENDO PARA PNG\n";
+    //CONVERTER PPM EM PNG E APAGAR O PPM
+    system("ffmpeg -i ./IMG/00001.ppm ./IMG/00001.png -loglevel quiet  -y ; rm
+    -f ./IMG/*.ppm "); */
+  cout << "CONCLUIDO\n";
 #endif
 #ifdef anima
   // DESENHA UMA SEQUENCIA DE IMAGENS E DEPOIS CRIA UM VIDEO USANDO FFMPEG
   cout << "Criando Frames\n";
   float zoom = 4.0501025f;
   float x_pos = 0.02090f; // x quanto maior mais pra direita -> voce vẽ
-  float y_pos = 0.30299f ;// y quanto maior mais pra baixo voce vẽ
+  float y_pos = 0.30299f; // y quanto maior mais pra baixo voce vẽ
   int frames = 300;
   for (int i = 0; i < frames; i += 1) {
 
-    ocl.SetarArgumentos(1, int(i*1.5));
+    ocl.SetarArgumentos(1, int(i * 1.5));
     ocl.SetarArgumentos(2, zoom);
     float ii = float(i * 4) / (frames - i);
     ii = ii > 1.0 ? 1.0f : ii < 0 ? 0 : ii;
@@ -108,8 +104,8 @@ int main() {
     ocl.SetarArgumentos(4, InterpolacaoLinear(-2.0, y_pos, ii));
     ocl.finalizar({(size_t)w, (size_t)h});
 
-   ocl.recuperar(b_a,img);
-    SalvarImg("IMG/" + to_zero_lead(i, 5), img, w, h, c);
+    ocl.recuperar(b_a, img);
+    SalvarImgP6("IMG/" + to_zero_lead(i, 5), img, w, h, c);
     zoom -= zoom * 0.05;
   }
   cout << "Frames criados\nCriando video\n";

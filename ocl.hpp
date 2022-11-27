@@ -15,15 +15,17 @@
 */
 
 
-#include <CL/cl.h>
-#include <cstddef>
+//#define CL_TARGET_OPENCL_VERSION 300
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
+#include"/usr/include/CL/cl.h"
+#include "/usr/include/CL/opencl.hpp"
+#include <cstddef>
+#include <string>
 #include <iostream>
 #include <vector>
 using std::cout;
 using std::vector;
-#include "/usr/include/CL/opencl.hpp"
 #include <fstream>
 class OPENCL {
 public:
@@ -37,12 +39,20 @@ public:
   std::string CodigoSTR;
   cl::Kernel kernel;
   cl::CommandQueue Fila;
+  cl_int erro;
+  std::string logPath="ArquivoErro.txt";
   // INICIALIZAR A CLASSE
+  void log(std::string msg) {
+    std::ofstream arquivoerro(logPath.c_str());
+    arquivoerro << msg;
+    arquivoerro.close();
+  }
   OPENCL(bool printar = false) {
     cl::Platform::get(&Plataformas);
 
     if (Plataformas.size() == 0) {
       std::cout << "Nenhuma plataforma encontrada!\n";
+      log("Nenhuma plataforma encontrada!\n");
       exit(1);
     }
     if (printar) {
@@ -72,6 +82,8 @@ public:
     PlataformaPadrao.getDevices(CL_DEVICE_TYPE_ALL, &TodosDispositivos);
     if (TodosDispositivos.size() == 0) {
       std::cout << " Nenhum dispositivo encontrado!\n";
+     
+      log(" Nenhum dispositivo encontrado!\n");
       exit(1);
     }
 
@@ -85,7 +97,7 @@ public:
     std::ifstream t(codigo);
     std::string str((std::istreambuf_iterator<char>(t)),
                     std::istreambuf_iterator<char>());
-                    CodigoSTR = str;
+    CodigoSTR = str;
     SetarCodigo(str);
     SetarPrograma(nomeProg);
   }
@@ -94,15 +106,19 @@ public:
     Codigo.clear();
     Codigo.push_back({codigo.c_str(), codigo.length()});
     Programa = cl::Program(contexto, Codigo);
-    cl_int erro = Programa.build({Dispositivo});
+    erro = Programa.build({Dispositivo});
     if (erro != CL_SUCCESS) {
       std::cout << " Error building: \n";
-      std::ofstream arquivoerro("ArquivoErro.txt");
+      log("ERRO nº"+std::to_string(erro)+"\n"+Programa.getBuildInfo<CL_PROGRAM_BUILD_LOG>(Dispositivo));
+    /*   std::ofstream arquivoerro("ArquivoErro.txt");
       arquivoerro << erro;
       arquivoerro << Programa.getBuildInfo<CL_PROGRAM_BUILD_LOG>(Dispositivo);
-      arquivoerro.close();
-
-      exit(1);
+      arquivoerro.close(); */
+      // exit(1);
+    } else {
+      log("OK");
+      /* std::ofstream arquivoerro("ArquivoErro.txt");
+      arquivoerro << ""; */
     }
     Fila = cl::CommandQueue(contexto, Dispositivo);
   }
@@ -128,42 +144,43 @@ public:
   // COPIAR VETOR PARA O BUFFER
   template <typename T>
   void VetorParaBuffer(cl::Buffer &Buffer, std::vector<T> &Vetor) {
-    
+
     Fila.enqueueWriteBuffer(Buffer, CL_TRUE, 0, sizeof(T) * Vetor.size(),
                             Vetor.data());
   }
 
-
-  //ALOCAR MEMORIA NO DISPOSITVO host
+  // ALOCAR MEMORIA NO DISPOSITVO host
   template <typename T> cl::Buffer CriarBufferHOST(std::vector<T> &Vetor) {
     return cl::Buffer(contexto, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
                       sizeof(T) * Vetor.size(), Vetor.data());
   }
-  //ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO HOST
-  template <typename T> cl::Buffer CriarBufferHOST_ESCRITA(std::vector<T> &Vetor) {
+  // ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO HOST
+  template <typename T>
+  cl::Buffer CriarBufferHOST_ESCRITA(std::vector<T> &Vetor) {
     return cl::Buffer(contexto, CL_MEM_WRITE_ONLY | CL_MEM_USE_HOST_PTR,
                       sizeof(T) * Vetor.size(), Vetor.data());
   }
 
-
-//ALOCAR MEMORIA NO DISPOSITVO
+  // ALOCAR MEMORIA NO DISPOSITVO
   template <typename T> cl::Buffer CriarBuffer(std::vector<T> &Vetor) {
-    return cl::Buffer(contexto,CL_MEM_READ_WRITE, sizeof(T) * Vetor.size(),NULL,NULL);
+    return cl::Buffer(contexto, CL_MEM_READ_WRITE, sizeof(T) * Vetor.size(),
+                      NULL, NULL);
   }
-  //ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO
+  // ALOCAR MEMORIA SOMENTE ESCRITA NO DISPOSITIVO
   template <typename T> cl::Buffer CriarBufferESCRITA(std::vector<T> &Vetor) {
-    return cl::Buffer(contexto,CL_MEM_WRITE_ONLY, sizeof(T) * Vetor.size(),NULL,NULL);
-   
-  }  
+    return cl::Buffer(contexto, CL_MEM_WRITE_ONLY, sizeof(T) * Vetor.size(),
+                      NULL, NULL);
+  }
 
-  //DEFINI O FORMATO DA IMAGEM PARA VERMELHOR VERDE AZUL ALPHA EM FLOAT
+  // DEFINI O FORMATO DA IMAGEM PARA VERMELHOR VERDE AZUL ALPHA EM FLOAT
   void SetarImgFormat(cl::ImageFormat &formato) {
     formato.image_channel_order = CL_RGBA;
     formato.image_channel_data_type = CL_FLOAT;
   }
-  //CRIA IMAGEM 2D BASEADA NO VETOR RETORNA 0 PARA SUCESSO OU NUMERO PARA ERRO
+  // CRIA IMAGEM 2D BASEADA NO VETOR RETORNA 0 PARA SUCESSO OU NUMERO PARA ERRO
   int ImagemHOST(int w, int h, cl::Buffer &B_img, vector<float> &img,
-             cl::Image2D &imagem, cl::Sampler &amostra, bool exibir = false) {
+                 cl::Image2D &imagem, cl::Sampler &amostra,
+                 bool exibir = false) {
     B_img = CriarBufferHOST(img);
     cl_int erro;
     cl::ImageFormat formato;
@@ -197,7 +214,7 @@ public:
     return erro;
   }
 
-  //COPIAR DADOS DA IMAGEM 2D PARA O VETOR
+  // COPIAR DADOS DA IMAGEM 2D PARA O VETOR
   int recuperarImagem(int w, int h, vector<float> &img, cl::Image2D &imagem,
                       bool exibir = false) {
     int erro = Fila.enqueueReadImage(imagem, CL_TRUE, {0, 0, 0},

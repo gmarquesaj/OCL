@@ -8,9 +8,9 @@ all:Multiplicacao.o Mandelbrot_Vector.o Mandelbrot_Image2D.o
 	$(comp) Multiplicacao.o -o $(app1) -O3  -lOpenCL
 	$(comp) Mandelbrot_Vector.o -o $(app2) -O3  -lOpenCL
 	$(comp) Mandelbrot_Image2D.o -o $(app3) -O3  -lOpenCL
-	./$(app1)
+#	./$(app1)
 	./$(app2)
-	./$(app3)
+#	./$(app3)
 
 Multiplicacao.o: Exemplos/Multiplicacao.cpp
 	$(comp) -c Exemplos/Multiplicacao.cpp -o Multiplicacao.o  -O3
@@ -25,3 +25,5 @@ clean:
 	clear
 	rm -f *.o
 	rm -f Exec/*
+imgClear:
+	rm -f IMG/*
