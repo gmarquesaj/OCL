@@ -180,15 +180,15 @@ typedef struct {
   int x, y;
   float r, g, b;
 } ponto;
-int dis(int x1, int x2, int y1, int y2)
-{
-	int dx = (x1 - x2);
-	int dy = (y1 - y2);
-	// return abs(dx)  + abs(dy) ;
+int dis(int x1, int x2, int y1, int y2) {
+  int dx = (x1 - x2);
+  int dy = (y1 - y2);
+  // return abs(dx)  + abs(dy) ;
 
-	return dx * dx + dy * dy;
+  return dx * dx + dy * dy;
 };
-void kernel voronoy(__global float *entrada, __global ponto *pontos,const int q) {
+void kernel voronoy(__global float *entrada, __global ponto *pontos,
+                    const int q) {
   const int x = get_global_id(0);
   const int y = get_global_id(1);
   const int w = get_global_size(0);
@@ -197,19 +197,21 @@ void kernel voronoy(__global float *entrada, __global ponto *pontos,const int q)
   const int pos = XY2POS(x, y, w, h);
 
   int indexPrx = 0;
+  int minDis = 0; // dis(pontos[0].x,x,pontos[0].y,y);
   for (int i = 1; i < q; i++) {
 
     ponto p = pontos[i];
     ponto p2 = pontos[indexPrx];
-    if (dis(p.x, x, p.y, y) < dis(p2.x, x, p2.y, y)) {
+    int d = dis(p.x, x, p.y, y);
+    int d2 = dis(p2.x, x, p2.y, y);
+    if (d < d2) {
       indexPrx = i;
+      minDis = d;
     }
   }
   ponto p = pontos[indexPrx];
 
-//  ponto p = pontos[pos % 9];
-  float4 cor = {p.r, p.g, p.b, 1.0f};
-  // float4 cor = {1.0f, 0.5f,1.0f, 1.0f};
+  float4 cor = minDis > 50?(float4){p.r, p.g, p.b, 1.0f}:(float4){1.0f-p.r,1.0f- p.g,1.0f- p.b, 1.0f};
 
   entrada[pos] = cor.x;
   entrada[pos + 1] = cor.y;
