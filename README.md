@@ -5,3 +5,4 @@ Cabeçalho com o basico para usar OpenCL de maneira prática
     * Calcular o fractal de Mandelbrot usando:
         * Cl::Image 
         * std::Vector<float>
+    * Calcular o diagrama de Voronoy
