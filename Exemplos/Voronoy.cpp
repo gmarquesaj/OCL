@@ -66,7 +66,7 @@ int main()
     OPENCL ocl(false);
 
     ocl.AbrirCodigo("exemplo.cl", "voronoy");
-    system("rm -f IMG/*");
+    //system("rm -f IMG/*");
 
     const int c = 4;
     const int h = 2000;
@@ -93,6 +93,6 @@ int main()
     cout << "FINALIZADO\nRECUPERANDO\n";
     ocl.recuperar(b_a, img);
     cout << "RECUPERADO\nSALVANDO PRA ARQUIVO\n";
-    SalvarImgP6("IMG/" + to_zero_lead(1, 5), img, w, h, c);
+    SalvarImgP6("IMG/voronoy" , img, w, h, c);
     cout << "CONCLUIDO\n";
 }

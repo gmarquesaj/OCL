@@ -2,7 +2,8 @@
 
 #include "../ocl.hpp"
 
-int main() {
+int main()
+{
   cout << "//EXEMPLO DE USO DO CABEÇALHO\n";
   cout << "//SOMA OS VALORES DOS VETORES 'A' e 'B' SALVANDO O RESULTADO EM "
           "'C'\n\n";
@@ -27,7 +28,8 @@ int main() {
   ocl.SetarArgumentos(2, b_c);
   ocl.finalizar(10);
   ocl.recuperar(b_c, C);
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 10; i++)
+  {
     cout << A[i] << " + " << B[i] << " = " << C[i] << "\n";
   }
   cout << "\n";
