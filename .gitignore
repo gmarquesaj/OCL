@@ -1,6 +1,7 @@
 *.mp4
-Exec/
-IMG/
+Exec/Exemplo*
+*.ppm
+*.png
 .vscode/
 *.o
 *.txt
